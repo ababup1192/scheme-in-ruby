@@ -3,8 +3,18 @@ require_relative '../src/scheme'
 
 class InterpreterTest < Test::Unit::TestCase
   def test_eval
-    expected = 3
-    exp = AddOp.new(IntVal.new(1), IntVal.new(2))
+    exp = MulOp.new(
+      AddOp.new(
+        IntVal.new(1), 
+        SubOp.new(
+          IntVal.new(3),
+          IntVal.new(2)
+        )
+      ),
+      IntVal.new(5)
+    )
+
+    expected = 10
     actual = Interpreter.eval(exp)
     assert_equal expected, actual
   end

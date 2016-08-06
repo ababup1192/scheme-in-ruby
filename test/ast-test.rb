@@ -47,4 +47,40 @@ class SubOpValTest < Test::Unit::TestCase
   end
 end
 
+class MulOpValTest < Test::Unit::TestCase
+  def test_eval
+    expected = 3
+    actual = MulOp.new(IntVal.new(1), IntVal.new(3)).eval
+    assert_equal expected, actual
+  end
+
+  def test_eval_nest
+    expected = 18
+    actual = MulOp.new(
+      MulOp.new(
+        IntVal.new(1), IntVal.new(3)
+      ),
+      IntVal.new(6)
+    ).eval
+    assert_equal expected, actual
+  end
+end
+
+class AstOpValTest < Test::Unit::TestCase
+  def test_eval
+    expected = 10
+    actual = MulOp.new(
+      AddOp.new(
+        IntVal.new(1), 
+        SubOp.new(
+          IntVal.new(3),
+          IntVal.new(2)
+        )
+      ),
+      IntVal.new(5)
+    ).eval
+    assert_equal expected, actual
+  end
+end
+
 
