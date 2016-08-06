@@ -1,7 +1,14 @@
 require 'test/unit'
 require_relative '../src/scheme'
 
+
 class SchemeTest < Test::Unit::TestCase
+  class << self
+    def startup
+      @@global_env = [$primitive_fun_env]
+    end
+  end
+
   def test_num?
     assert_equal true, num?(0)
     assert_equal false, num?([:+, 1, 2])
@@ -24,55 +31,53 @@ class SchemeTest < Test::Unit::TestCase
     assert_equal expected, actual
   end
 
-  def test_lookup_primitive_fun_symbol
-    expected = [:prim, lambda{|x, y| x + y}]
-    actual = lookup_primitive_fun(:+)
-    assert_equal expected.first, actual.first
+  def test_lookup_var
+    actual = lookup_var(:+, @@global_env)
+    assert_not_nil(actual)
   end
 
-  def test_lookup_primitive_fun
-    # [:prim, lambda{|x, y| x + y}]
-    add_fun = lookup_primitive_fun(:+)
-    sub_fun = lookup_primitive_fun(:-)
-    mult_fun = lookup_primitive_fun(:*)
-
-    assert_equal(3, add_fun[1].call(1, 2))
-    assert_equal(-1, sub_fun[1].call(1, 2))
-    assert_equal(2, mult_fun[1].call(1, 2))
+  def test_extetend_env
+    expected = [{x: 1, y: 2}, {x: 3, y: 4}]
+    actual = extend_env([:x, :y], [1, 2], [{x: 3, y: 4}])
+    assert_equal expected, actual
   end
 
-  def test_apply_primitive_fun
-    # [:prim, lambda{|x, y| x + y}]
-    list = [:+, 1, 2]
-    add_fun = lookup_primitive_fun(car(list))
-    args = eval_list(cdr(list))
+  def test_make_closure
+    symbol, parameters, body, env = make_closure(
+      [:lambda, [:x, :y], [:+, :x, :y]],
+      [{x: 1, y: 2}]
+    )
 
+    assert_equal :closure, symbol
+    assert_equal [:x, :y], parameters
+    assert_equal [:+, :x, :y], body
+    assert_equal([{x: 1, y: 2}], env)
+  end
+
+  def test_lambda_apply
     expected = 3
-    actual = apply_primitive_fun(add_fun, args)
+    actual = lambda_apply(make_closure(
+      [:lambda, [:x, :y], [:+, :x, :y]],
+       @@global_env),
+       [1, 2])
     assert_equal expected, actual
   end
 
-  def test_eval_simple
-    list = [:*, 2, 5]
-
-    expected = 10
-    actual = _eval(list)
+  def test_eval_let
+    expected = 5
+    actual = eval_let([:let, [[:x, 3], [:y, 2]], 
+                       [:+, :x, :y]], @@global_env)
     assert_equal expected, actual
   end
 
-  def test_eval_list
-    list = [:*, [:+, 1, 2], 5]
-    
-    expected = [3, 5]
-    actual = eval_list(cdr(list))
-    assert_equal expected, actual
-  end
+  def test_closure_eval
+    exp = [:let, [[:x, 3]],
+           [:let, [[:fun, [:lambda, [:y], [:+, :x, :y]]]],
+            [:+, [:fun, 1], [:fun, 2]]]]
 
-   def test_eval
-    list = [:*, [:+, 1, 2], 5]
-    
-    expected = 15
-    actual = _eval(list)
+    expected = 9
+    actual = _eval(exp, @@global_env)
     assert_equal expected, actual
   end
 end
+

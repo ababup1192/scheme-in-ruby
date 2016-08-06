@@ -128,10 +128,3 @@ $primitive_fun_env = {
 }
 $global_env = [$primitive_fun_env]
 
-# exp = [[:lambda, [:x, :y], [:+, :x, :y]], 3, 2]
-
-# exp = [:let, [[:x, 3]],
-#        [:let, [[:fun, [:lambda, [:y], [:+, :x, :y]]]],
-#        [:+, [:fun, 1], [:fun, 2]]]]
-
-# puts _eval(exp, $global_env)
