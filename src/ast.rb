@@ -32,3 +32,19 @@ class AddOp
   end
 end
 
+class SubOp
+  include AST
+  attr_reader :left, :right
+
+  def initialize(left, right)
+    @left = left
+    @right = right
+  end
+
+  def eval
+    lval, rval = super
+    lval - rval
+  end
+end
+
+
