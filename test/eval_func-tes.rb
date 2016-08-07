@@ -1,27 +1,38 @@
 require 'test/unit'
-require_relative '../src/scheme'
+require_relative '../src/environment'
+require_relative '../src/eval_func'
 
 
 class EvalFuncTest < Test::Unit::TestCase
   def test_variable
+    env = Environment.new([{x: IntVal.new(5)}])
     expected = IntVal.new(5)
-    actual = Interpreter.new(IntVal.new(5)).eval
+    actual = Variable.new(:x).eval(env)
     assert_equal expected, actual
   end
+
   def test_addop
+    env = Environment.new()
     expected = IntVal.new(10)
-    actual = Interpreter.new(AddOp.new(4, 6)).eval
+    actual = AddOp.new(4, 6).eval(env)
+    assert_equal expected, actual
+  end
+
+  def test_addop_with_env
+    env = Environment.new([{x: IntVal.new(4), y: IntVal.new(6)}])
+    expected = IntVal.new(10)
+    actual = AddOp.new(:x, :y).eval(env)
     assert_equal expected, actual
   end
 
   def test_lambda
-    exp = Lambda.new([:x, :y], AddOp.new(:x, :y)).apply(3, 2)
+    env = Environment.new()
     expected = IntVal.new(5)
-    actual = Interpreter.new(exp).eval
+    actual = Lambda.new([:x, :y], 
+                        AddOp.new(:x, :y)
+                       ).apply(env, 3, 2)
     assert_equal expected, actual
   end
-
-=begin
   def test_let
     env = Environment.new()
     expected = IntVal.new(5)
@@ -42,5 +53,4 @@ class EvalFuncTest < Test::Unit::TestCase
                     ).eval(env)
     assert_equal expected, actual
   end
-=end
 end

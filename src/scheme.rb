@@ -1,8 +1,17 @@
-require_relative 'ast'
+require_relative 'eval_func'
+require_relative 'environment'
 
 class Interpreter
-  def self.eval(exp)
-    exp.eval
+  attr_reader :env, :exp
+
+  def initialize(exp)
+    @env = Environment.new()
+    @exp = exp
+    @exp.add_env(@env)
+  end
+
+  def eval
+    @exp.eval
   end
 end
 
