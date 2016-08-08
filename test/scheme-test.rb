@@ -58,8 +58,8 @@ class SchemeTest < Test::Unit::TestCase
     expected = 3
     actual = lambda_apply(make_closure(
       [:lambda, [:x, :y], [:+, :x, :y]],
-       @@global_env),
-       [1, 2])
+      @@global_env),
+      [1, 2])
     assert_equal expected, actual
   end
 
@@ -76,6 +76,29 @@ class SchemeTest < Test::Unit::TestCase
             [:+, [:fun, 1], [:fun, 2]]]]
 
     expected = 9
+    actual = _eval(exp, @@global_env)
+    assert_equal expected, actual
+  end
+
+  def test_eval_if
+    exp = [:if, [:<, 1, 3], 1, 0]
+
+    expected = 1
+    actual = _eval(exp, @@global_env)
+    assert_equal expected, actual
+  end
+
+  def test_letrec
+    exp = [:let,
+     [[:fact,
+       [:lambda, [:n], [:if, 
+                        [:<, :n, 1],
+                        1, 
+                        [:*, :n, [:fact, [:-, :n, 1]]]]]]],
+     [:fact, 1]]
+    
+    expected = 1
+    # occur error
     actual = _eval(exp, @@global_env)
     assert_equal expected, actual
   end
