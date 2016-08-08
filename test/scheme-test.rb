@@ -89,15 +89,15 @@ class SchemeTest < Test::Unit::TestCase
   end
 
   def test_letrec
-    exp = [:let,
+    exp = [:letrec,
      [[:fact,
        [:lambda, [:n], [:if, 
                         [:<, :n, 1],
                         1, 
                         [:*, :n, [:fact, [:-, :n, 1]]]]]]],
-     [:fact, 1]]
+     [:fact, 3]]
     
-    expected = 1
+    expected = 6
     # occur error
     actual = _eval(exp, @@global_env)
     assert_equal expected, actual
