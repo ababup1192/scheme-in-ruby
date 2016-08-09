@@ -5,7 +5,7 @@ require_relative '../src/scheme'
 class SchemeTest < Test::Unit::TestCase
   class << self
     def startup
-      @@global_env = [$primitive_fun_env]
+      @@global_env = $global_env
     end
   end
 
@@ -98,7 +98,29 @@ class SchemeTest < Test::Unit::TestCase
      [:fact, 3]]
     
     expected = 6
-    # occur error
+    actual = _eval(exp, @@global_env)
+    assert_equal expected, actual
+  end
+
+  def test_define
+    exp1 = [:define, [:length, :list],
+            [:if, [:null?, :list],
+             0,
+             [:+, [:length, [:cdr, :list]], 1]]]
+    exp2 = [:length, [:list, 1, 2]]
+    expected = 2
+    _eval(exp1, @@global_env)
+    actual = _eval(exp2, @@global_env)
+    assert_equal expected, actual
+  end
+
+  def test_cond
+    exp = [:cond,
+           [[:>, 1, 1], 1],
+           [[:>, 2, 1], 2],
+           [[:>, 3, 1], 3],
+           [:else, -1]]
+    expected = 2
     actual = _eval(exp, @@global_env)
     assert_equal expected, actual
   end

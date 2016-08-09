@@ -1,5 +1,3 @@
-$global_env = [$primitive_fun_env, $boolean_env]
-
 $primitive_fun_env = {
   :+ => [:prim, lambda{|x, y| x + y}],
   :- => [:prim, lambda{|x, y| x - y}],
@@ -12,6 +10,17 @@ $primitive_fun_env = {
 }
 
 $boolean_env = {true: true, false: false}
+
+$list_env = {
+  :nil => [],
+  :null? => [:prim, lambda{|list| null?(list)}],
+  :cons => [:prim, lambda{|a, b| cons(a, b)}],
+  :car => [:prim, lambda{|list| car(list)}],
+  :cdr => [:prim, lambda{|list| cdr(list)}],
+  :list =>  [:prim, lambda{|*list| list(*list)}],
+}
+
+$global_env = [$list_env, $primitive_fun_env, $boolean_env]
 
 def _eval(exp, env)
   # not list(数値 or 変数)のとき
@@ -61,7 +70,9 @@ def special_form?(exp)
   lambda?(exp) or 
     let?(exp) or
     letrec?(exp) or
-    if?(exp)
+    if?(exp) or
+      define?(exp) or
+      cond?(exp)
 end
 
 # special_form判別
@@ -82,6 +93,14 @@ def if?(exp)
   exp[0] == :if
 end
 
+def define?(exp)
+  exp[0] == :define
+end
+
+def cond?(exp)
+  exp[0] == :cond
+end
+
 def eval_special_form(exp, env)
   if lambda?(exp)
     eval_lambda(exp, env)
@@ -91,16 +110,37 @@ def eval_special_form(exp, env)
     eval_letrec(exp, env)
   elsif if?(exp)
     eval_if(exp, env)
+  elsif define?(exp)
+    eval_define(exp, env)
+  elsif cond?(exp)
+    eval_cond(exp, env)
   end
 end
 
 # list操作
+#
+def null?(list)
+  list == []
+end
+
+def cons(a, b)
+  if not list?(b)
+    raise "sorry, we haven't implemented yet..."
+  else
+    [a] + b
+  end
+end
+
 def car(list)
   list[0]
 end
 
 def cdr(list)
   list[1..-1]
+end
+
+def list(*list)
+  list
 end
 
 def eval_list(exp, env)
@@ -194,3 +234,63 @@ def set_extend_env!(parameters, args_val, ext_env)
     ext_env[0][parameter] = arg_val
   end
 end
+
+def eval_define(exp, env)
+  if define_with_parameter?(exp)
+    var, val = define_with_parameter_var_val(exp)
+  else
+    var, val = define_var_val(exp)
+  end
+  var_ref = lookup_var_ref(var, env)
+  if var_ref != nil
+    var_ref[var] = _eval(val, env)
+  else
+    extend_env!([var], [_eval(val, env)], env)
+  end
+  nil
+end
+
+def extend_env!(parameters, args, env)
+  alist = parameters.zip(args)
+  h = Hash.new
+  alist.each{|k, v| h[k] = v }
+  env.unshift(h)
+end
+
+def define_with_parameter?(exp)
+  list?(exp[1])
+end
+
+def define_with_parameter_var_val(exp)
+  var = car(exp[1])
+  parameters, body = cdr(exp[1]), exp[2]
+  val = [:lambda, parameters, body]
+  [var, val]
+end
+
+def define_var_val(exp)
+  [exp[1], exp[2]]
+end
+
+def lookup_var_ref(var, env)
+  env.find{|alist| alist.key?(var)}
+end
+
+def eval_cond(exp, env)
+  if_exp = cond_to_if(cdr(exp))
+  eval_if(if_exp, env)
+end
+
+def cond_to_if(cond_exp)
+  if cond_exp == []
+    ''
+  else
+    e = car(cond_exp)
+    p, c = e[0], e[1]
+    if p == :else
+      p = :true
+    end
+    [:if, p, c, cond_to_if(cdr(cond_exp))]
+  end
+end
+
