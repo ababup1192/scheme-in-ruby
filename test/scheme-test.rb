@@ -124,5 +124,12 @@ class SchemeTest < Test::Unit::TestCase
     actual = _eval(exp, @@global_env)
     assert_equal expected, actual
   end
+
+  def test_parse
+    exp = '(length (list 1 2 3))'
+    expected = [:length, [:list, 1, 2, 3]]
+    actual = parse(exp)
+    assert_equal expected, actual
+  end
 end
 

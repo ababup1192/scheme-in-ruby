@@ -22,6 +22,15 @@ $list_env = {
 
 $global_env = [$list_env, $primitive_fun_env, $boolean_env]
 
+def parse(exp)
+  program = exp.strip().
+    gsub(/[a-zA-Z\+\-\*><=][0-9a-zA-Z\+\_=!*]*/,':\\0').
+    gsub(/\s+/, ', ').
+    gsub(/\(/, '[').
+    gsub(/\)/, ']')
+  eval(program)
+end
+
 def _eval(exp, env)
   # not list(数値 or 変数)のとき
   if not list?(exp)
@@ -44,6 +53,10 @@ def _eval(exp, env)
   end
 end
 
+def quote?(exp)
+  exp[0] == :quote
+end
+
 # 型判別
 def list?(exp)
   exp.is_a?(Array)
@@ -64,15 +77,6 @@ def lookup_var(var, env)
     raise "couldn't find value to variavles:'#{var}'"
   end
   alist[var]
-end
-
-def special_form?(exp)
-  lambda?(exp) or 
-    let?(exp) or
-    letrec?(exp) or
-    if?(exp) or
-      define?(exp) or
-      cond?(exp)
 end
 
 # special_form判別
@@ -101,6 +105,16 @@ def cond?(exp)
   exp[0] == :cond
 end
 
+def special_form?(exp)
+  lambda?(exp) or 
+    let?(exp) or
+    letrec?(exp) or
+    if?(exp) or
+      define?(exp) or
+      cond?(exp) or
+      quote?(exp)
+end
+
 def eval_special_form(exp, env)
   if lambda?(exp)
     eval_lambda(exp, env)
@@ -114,6 +128,8 @@ def eval_special_form(exp, env)
     eval_define(exp, env)
   elsif cond?(exp)
     eval_cond(exp, env)
+  elsif quote?(exp)
+    eval_quote(exp, env)
   end
 end
 
@@ -294,3 +310,61 @@ def cond_to_if(cond_exp)
   end
 end
 
+def eval_quote(exp, env)
+  car(cdr(exp))
+end
+
+def repl
+  prompt = '>>> '
+  second_prompt = '> '
+  while true
+    print prompt
+    line = gets or return
+    while line.count('(') > line.count(')')
+      print second_prompt
+      next_line = gets or return
+      line += next_line
+    end
+    redo if line =~ /\A\s*\z/m
+    begin
+      val = _eval(parse(line), $global_env)
+    rescue Exception => e
+      puts e.to_s
+      redo
+    end
+    puts pp(val)
+  end
+end
+
+def closure?(exp)
+  exp[0] == :closue
+end
+
+def pp(exp)
+  if exp.is_a?(Symbol) or num?(exp)
+    exp.to_s
+  elsif exp == nil
+    'nil'
+  elsif exp.is_a?(Array) and closure?(exp)
+    parameters, body, _ = exp[1], exp[2], exp[3]
+    "(closure #{pp(parameters)} #{pp(body)})"
+  elsif exp.is_a(Array) and lambda?(exp)
+    "(lambda #{pp(parameters)} #{pp(body)})"
+  elsif exp.is_a?(Hash)
+    if exp == $primitive_fun_env
+      '*prmitive_fun_env*'
+    elsif exp == $boolean_env
+      '*boolean_env*'
+    elsif exp == $list_env
+      '*list_env*'
+    else
+      '{' + exp.map{|k, v| pp(k) + ':' + pp(v)}.join(', ') + '}'
+    end
+  elsif exp.is_a?(Array)
+    '(' + exp.map{|e| pp(e)}.join(', ') + ')'
+  else
+    exp.to_s
+  end
+end
+
+repl
